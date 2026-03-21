@@ -13,7 +13,7 @@ app = FastAPI(
 # CORS (important for Next.js frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:8000"],  # change to your frontend URL in production
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:8000", "https://chatryt-green.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
