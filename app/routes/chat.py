@@ -1,4 +1,6 @@
+import json
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from app.schemas.chat import ChatRequest
 from app.graph.builder import build_graph
 
@@ -20,8 +22,12 @@ async def chat_endpoint(data: ChatRequest):
         ]
     }
 
-    result = await graph.ainvoke(state, config=config)
+    async def event_generator():
+        async for event in graph.astream_events(state, config=config, version="v2"):
+            kind = event["event"]
+            if kind == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                if chunk.content:
+                    yield f"data: {json.dumps({'content': chunk.content})}\n\n"
 
-    return {
-        "response": result["messages"][-1].content
-    }
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
