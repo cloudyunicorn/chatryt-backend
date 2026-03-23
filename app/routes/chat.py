@@ -60,10 +60,15 @@ async def chat_endpoint(data: ChatRequest):
 @router.get("/threads")
 async def list_threads(user_id: str = "default"):
     """List threads specifically for a user_id based on composite string"""
+    if not DATABASE_URL:
+        raise HTTPException(status_code=500, detail="DATABASE_URL not configured")
+        
     try:
         threads_data = {}
         async with AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs) as pool:
             checkpointer = AsyncPostgresSaver(pool)
+            # Ensure tables exist before querying
+            await checkpointer.setup()
             
             async for state in checkpointer.alist(None):
                 raw_thread_id = state.config["configurable"].get("thread_id", "")
@@ -120,8 +125,12 @@ async def get_history(thread_id: str, user_id: str = "default"):
         }
     }
     
+    if not DATABASE_URL:
+        raise HTTPException(status_code=500, detail="DATABASE_URL not configured")
+        
     async with AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs) as pool:
         checkpointer = AsyncPostgresSaver(pool)
+        await checkpointer.setup()
         saved = await checkpointer.aget_tuple(config)
         
         if not saved or not saved.checkpoint:
