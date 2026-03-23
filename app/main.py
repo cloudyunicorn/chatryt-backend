@@ -13,7 +13,7 @@ from app.routes import chat
 DATABASE_URL = os.getenv("DATABASE_URL")
 connection_kwargs = {
     "autocommit": True,
-    "prepare_threshold": 0,
+    "prepare_threshold": None,
 }
 
 @asynccontextmanager
@@ -22,7 +22,12 @@ async def lifespan(app: FastAPI):
     if DATABASE_URL:
         # Create a global pool that will be reused across requests
         # Pass connection_kwargs via the explicit 'kwargs' parameter as required by psycopg_pool
-        app.state.pool = AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs)
+        app.state.pool = AsyncConnectionPool(
+            conninfo=DATABASE_URL, 
+            kwargs=connection_kwargs,
+            open=False
+        )
+        await app.state.pool.open()
         
         # Initialize database tables once on startup
         try:
