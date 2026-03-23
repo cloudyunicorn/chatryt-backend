@@ -21,9 +21,8 @@ async def lifespan(app: FastAPI):
     # Initialize connection pool
     if DATABASE_URL:
         # Create a global pool that will be reused across requests
-        # NOTE: Using **connection_kwargs is critical to ensure prepare_threshold=0 
-        # is actually passed to the underlying psycopg connections.
-        app.state.pool = AsyncConnectionPool(conninfo=DATABASE_URL, **connection_kwargs)
+        # Pass connection_kwargs via the explicit 'kwargs' parameter as required by psycopg_pool
+        app.state.pool = AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs)
         
         # Initialize database tables once on startup
         try:
