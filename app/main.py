@@ -1,18 +1,43 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from psycopg_pool import AsyncConnectionPool
 
 # Load environment variables
 load_dotenv()
 
 from app.routes import chat
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+connection_kwargs = {
+    "autocommit": True,
+    "prepare_threshold": 0,
+}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize connection pool
+    if DATABASE_URL:
+        # Create a global pool that will be reused across requests
+        app.state.pool = AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs)
+    else:
+        app.state.pool = None
+        print("CRITICAL: DATABASE_URL not set in environment!")
+    
+    yield
+    
+    # Close connection pool on shutdown
+    if app.state.pool:
+        await app.state.pool.close()
+
 # Create FastAPI app
 app = FastAPI(
     title="AI Chatbot Backend",
     description="LangGraph-powered AI chatbot API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS (important for Next.js frontend)
