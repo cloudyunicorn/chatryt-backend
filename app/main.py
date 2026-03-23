@@ -22,6 +22,15 @@ async def lifespan(app: FastAPI):
     if DATABASE_URL:
         # Create a global pool that will be reused across requests
         app.state.pool = AsyncConnectionPool(conninfo=DATABASE_URL, kwargs=connection_kwargs)
+        
+        # Initialize database tables once on startup
+        try:
+            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+            checkpointer = AsyncPostgresSaver(app.state.pool)
+            await checkpointer.setup()
+            print("Database checkpointer initialized successfully.")
+        except Exception as e:
+            print(f"CRITICAL: Failed to initialize database checkpointer: {e}")
     else:
         app.state.pool = None
         print("CRITICAL: DATABASE_URL not set in environment!")

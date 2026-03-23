@@ -39,7 +39,6 @@ async def chat_endpoint(data: ChatRequest, request: Request):
             raise HTTPException(status_code=500, detail="Database pool not initialized")
             
         checkpointer = AsyncPostgresSaver(pool)
-        await checkpointer.setup()
         
         local_graph = build_graph(checkpointer=checkpointer)
         
@@ -66,8 +65,6 @@ async def list_threads(request: Request, user_id: str = "default"):
             raise HTTPException(status_code=500, detail="Database pool not initialized")
             
         checkpointer = AsyncPostgresSaver(pool)
-        # Ensure tables exist before querying
-        await checkpointer.setup()
         
         async for state in checkpointer.alist(None):
             raw_thread_id = state.config["configurable"].get("thread_id", "")
@@ -127,7 +124,6 @@ async def get_history(thread_id: str, request: Request, user_id: str = "default"
         raise HTTPException(status_code=500, detail="Database pool not initialized")
         
     checkpointer = AsyncPostgresSaver(pool)
-    await checkpointer.setup()
     saved = await checkpointer.aget_tuple(config)
     
     if not saved or not saved.checkpoint:
