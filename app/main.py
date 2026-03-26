@@ -4,14 +4,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from psycopg_pool import AsyncConnectionPool
-
-# Load environment variables
-load_dotenv()
-
 from app.routes import chat
 from app.limiter import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+
+# Load environment variables
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": None,
