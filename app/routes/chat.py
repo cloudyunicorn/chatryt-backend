@@ -12,9 +12,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 graph = build_graph()
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from app.limiter import limiter
 
 @router.post("/")
-async def chat_endpoint(data: ChatRequest, request: Request):
+@limiter.limit("10/minute")
+async def chat_endpoint(request: Request, data: ChatRequest):
     session_id = data.session_id or "default"
     user_id = data.user_id or "default"
     

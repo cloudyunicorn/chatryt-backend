@@ -9,8 +9,9 @@ from psycopg_pool import AsyncConnectionPool
 load_dotenv()
 
 from app.routes import chat
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+from app.limiter import limiter
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": None,
@@ -54,6 +55,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS (important for Next.js frontend)
 app.add_middleware(
